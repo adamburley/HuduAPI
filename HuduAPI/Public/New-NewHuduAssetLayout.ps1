@@ -6,6 +6,7 @@ function New-NewHuduAssetLayout {
         [Parameter(Mandatory)]
         [string]$Name,
         [Parameter()]
+        [ArgumentCompletions('"fas fa-circle"','"fas fa-key"','"fas fa-envelope"','"fas fa-laptop"','"fas fa-globe"','"fas fa-user"','"fas fa-user-secret"','"fas fa-credit-card"','"fas fa-file"','"fas fa-file-alt"','"fas fa-file-archive"','"fas fa-file-audio"','"fas fa-file-code"','"fas fa-file-excel"','"fas fa-file-image"','"fas fa-file-pdf"','"fas fa-file-powerpoint"','"fas fa-file-video"','"fas fa-file-word"','"fas fa-folder"','"fas fa-folder-open"','"fas fa-folder-plus')]
         [string]$Icon = 'fas fa-circle',
         [Parameter()]
         [string]$Color = '#5b17f2',
@@ -45,6 +46,7 @@ function New-NewHuduAssetLayout {
             $layout.add('sidebar_folder_id', $SidebarFolderId)
         }
         if ($Fields) {
+            # Exclude ID if present and handle mismatches between front-end site and API field type labels
             $normalizedFields = $Fields | %{
                 Write-Host $_.label
                 $nf = $_ | select -ExcludeProperty 'id'
@@ -58,6 +60,7 @@ function New-NewHuduAssetLayout {
                 if ($nf.options) { $nf.options = $nf.options -join "`n" }
                 $nf
             }
+
             $layout.add('fields', @($normalizedFields))
         }
         $layout

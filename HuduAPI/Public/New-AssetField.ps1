@@ -8,7 +8,7 @@ function New-AssetField {
         [AssetFieldType]$Type,
         [Parameter()]
         [ValidateRange(1, 1000)]
-        [int]$Position =1,
+        [int]$Position = 1,
         [Parameter()]
         [switch]$Required,
         [Parameter()]
