@@ -6,7 +6,7 @@ function New-NewHuduAssetLayout {
         [Parameter(Mandatory)]
         [string]$Name,
         [Parameter()]
-        [ArgumentCompletions('"fas fa-circle"','"fas fa-key"','"fas fa-envelope"','"fas fa-laptop"','"fas fa-globe"','"fas fa-user"','"fas fa-user-secret"','"fas fa-credit-card"','"fas fa-file"','"fas fa-file-alt"','"fas fa-file-archive"','"fas fa-file-audio"','"fas fa-file-code"','"fas fa-file-excel"','"fas fa-file-image"','"fas fa-file-pdf"','"fas fa-file-powerpoint"','"fas fa-file-video"','"fas fa-file-word"','"fas fa-folder"','"fas fa-folder-open"','"fas fa-folder-plus')]
+        [ArgumentCompletions('"fas fa-circle"', '"fas fa-key"', '"fas fa-envelope"', '"fas fa-laptop"', '"fas fa-globe"', '"fas fa-user"', '"fas fa-user-secret"', '"fas fa-credit-card"', '"fas fa-file"', '"fas fa-file-alt"', '"fas fa-file-archive"', '"fas fa-file-audio"', '"fas fa-file-code"', '"fas fa-file-excel"', '"fas fa-file-image"', '"fas fa-file-pdf"', '"fas fa-file-powerpoint"', '"fas fa-file-video"', '"fas fa-file-word"', '"fas fa-folder"', '"fas fa-folder-open"', '"fas fa-folder-plus')]
         [string]$Icon = 'fas fa-circle',
         [Parameter()]
         [string]$Color = '#5b17f2',
@@ -32,27 +32,27 @@ function New-NewHuduAssetLayout {
     )
     process {
         $layout = [ordered]@{
-            name = $Name
-            icon = $Icon
-            color = $Color
-            icon_color = $IconColor
+            name              = $Name
+            icon              = $Icon
+            color             = $Color
+            icon_color        = $IconColor
             include_passwords = $IncludePasswords
-            include_photos = $IncludePhotos
-            include_comments = $IncludeComments
-            include_files = $IncludeFiles
-            active = $Active
+            include_photos    = $IncludePhotos
+            include_comments  = $IncludeComments
+            include_files     = $IncludeFiles
+            active            = $Active
         }
         if ($SidebarFolderId) {
             $layout.add('sidebar_folder_id', $SidebarFolderId)
         }
         if ($Fields) {
             # Exclude ID if present and handle mismatches between front-end site and API field type labels
-            $normalizedFields = $Fields | %{
+            $normalizedFields = $Fields | Foreach-Object {
                 Write-Host $_.label
-                $nf = $_ | select -ExcludeProperty 'id'
-                $nf.field_type = switch ($nf.field_type){
+                $nf = $_ | Select-Object -ExcludeProperty 'id'
+                $nf.field_type = switch ($nf.field_type) {
                     'AssetLink' { 'AssetTag' }
-                    'ConfidentialText' { 'Password'}
+                    'ConfidentialText' { 'Password' }
                     'CopyableText' { 'Email' }
                     'Site' { 'Website' }
                     Default { $nf.field_type }
@@ -60,26 +60,23 @@ function New-NewHuduAssetLayout {
                 if ($nf.options) { $nf.options = $nf.options -join "`n" }
                 $nf
             }
-
+            if (($normalizedFields.Position | Measure-Object -Maximum).Maximum -eq 1) {
+                # No position information provided, so order based on array order.
+                # Note: This is likely not needed as this appears to be the default behavior of the API.
+                # However JSON is specifically unordered, so this is a safeguard.
+                $currentPosition = 1
+                $normalizedFields | Foreach-Object {
+                    $_.position = $currentPosition
+                    $currentPosition++
+                }
+            }
             $layout.add('fields', @($normalizedFields))
         }
-        $layout
+        $JSON = $layout | ConvertTo-Json -Depth 10
+        Write-Verbose $JSON
+        if ($PSCmdlet.ShouldProcess("Create a new asset Layout in Hudu named $Name, with icon $Icon and $($Fields.Count) fields.", "$Name, with $($Fields.Count) fields.", "Create new Hudu asset layout via API")) {
+            ##Invoke-HuduRequest -Method post -Resource '/api/v1/asset_layouts' -Body $JSON
+            $JSON
+        }
     }
 }
-
-<#
-id                : 34
-slug              : testgetfieldtypes-5fb0e370a784
-name              : testgetfieldtypes
-icon              : fas fa-circle
-color             : #5b17f2
-icon_color        : #FFFFFF
-sidebar_folder_id : 1
-active            : True
-include_passwords : True
-include_photos    : True
-include_comments  : True
-include_files     : True
-created_at        : 12/14/2023 9:49:43 PM
-updated_at        : 12/15/2023 6:47:33 PM
-#>
