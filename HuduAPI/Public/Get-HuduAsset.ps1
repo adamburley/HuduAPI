@@ -90,13 +90,12 @@ function Get-HuduAsset {
                 Default { Write-Warning 'Unable to determine value of -AssetLayout parameter. Omitting from call.'; $null }
             }
         }
+        # As of Hudu V2.27 calls including only part of the date range may return HTTP 500. This differs from the documented behavior. 
+        # Workaround is to always specify both if one is set.
         if ($UpdatedAfter -or $UpdatedBefore) {
-            $afterString = $UpdatedAfter ? $UpdatedAfter.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") : $null
-            $beforeString = $UpdatedBefore ? $UpdatedBefore.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") : $null
+            $afterString = $UpdatedAfter ? $UpdatedAfter.ToString('o') : (Get-Date).AddYears(-100).ToString('o')
+            $beforeString = $UpdatedBefore ? $UpdatedBefore.ToString('o') : (Get-Date).ToString('o')
             $updatedAt = "$afterString,$beforeString"
-        }
-        if ($UpdatedAfter -ne $UpdatedBefore) {
-            Write-Warning "As of Hudu V2.27 calls including only part of the date range may return HTTP 500. This differs from the documented behavior. Specify both -UpdatedAfter and -UpdatedBefore if an error occurs."
         }
         $Params = @{}
         if ($Id) { $Params.id = $Id }
