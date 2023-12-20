@@ -46,7 +46,7 @@ function Set-NewHuduAssetLayout {
         }
         else {
             # Fetching the existing layout first, so we can emulate a PATCH request.
-            $layout = Get-NewHuduAssetLayout -Id $Id
+            $layout = Get-HuduAssetLayout -Id $Id
             if (-not $layout) {
                 Write-Error "No layout with ID $Id found. Id is required to update a layout." -ErrorAction Stop
             }

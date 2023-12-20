@@ -134,7 +134,7 @@
     'Set-HuduPassword',
     'Set-HuduPasswordArchive',
     'Set-HuduWebsite',
-    'Get-NewHuduAssetLayout',
+    'Get-HuduAssetLayout',
     'New-HuduAssetLayoutField',
     'New-NewHuduAssetLayout',
     'Get-NewHuduAsset'

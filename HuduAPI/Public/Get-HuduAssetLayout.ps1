@@ -1,4 +1,4 @@
-function Get-NewHuduAssetLayout {
+function Get-HuduAssetLayout {
     [CmdletBinding()]
     param(
         [Parameter()]

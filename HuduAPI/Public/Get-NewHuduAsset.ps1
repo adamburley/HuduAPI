@@ -81,7 +81,7 @@ function Get-NewHuduAsset {
                 'PSCustomObject' { $Layout.id }
                 'int' { $Layout }
                 'string' {
-                    if (($lObj = Get-NewHuduAssetLayout -Name $Layout) -and $lObj.Count -eq 1) { $lObj.id }
+                    if (($lObj = Get-HuduAssetLayout -Name $Layout) -and $lObj.Count -eq 1) { $lObj.id }
                     else {
                         Write-Warning "Unable to identify asset layout '$Layout' or more than one result returned. Omitting from call."
                         $null
@@ -95,7 +95,7 @@ function Get-NewHuduAsset {
             $beforeString = $UpdatedBefore ? $UpdatedBefore.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") : $null
             $updatedAt = "$afterString,$beforeString"
         }
-        if (-not ($UpdatedAfter -and $UpdatedBefore)) {
+        if ($UpdatedAfter -ne $UpdatedBefore) {
             Write-Warning "As of Hudu V2.27 calls including only part of the date range may return HTTP 500. This differs from the documented behavior. Specify both -UpdatedAfter and -UpdatedBefore if an error occurs."
         }
         $Params = @{}
