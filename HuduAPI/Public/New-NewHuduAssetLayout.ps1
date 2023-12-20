@@ -47,19 +47,7 @@ function New-NewHuduAssetLayout {
         }
         if ($Fields) {
             # Exclude ID if present and handle mismatches between front-end site and API field type labels
-            $normalizedFields = $Fields | Foreach-Object {
-                Write-Host $_.label
-                $nf = $_ | Select-Object -ExcludeProperty 'id'
-                $nf.field_type = switch ($nf.field_type) {
-                    'AssetLink' { 'AssetTag' }
-                    'ConfidentialText' { 'Password' }
-                    'CopyableText' { 'Email' }
-                    'Site' { 'Website' }
-                    Default { $nf.field_type }
-                }
-                if ($nf.options) { $nf.options = $nf.options -join "`n" }
-                $nf
-            }
+            $normalizedFields = $Fields | Convert-HuduAssetLayoutFieldObjectToAPIFormat
             if (($normalizedFields.Position | Measure-Object -Maximum).Maximum -eq 1) {
                 # No position information provided, so order based on array order.
                 # Note: This is likely not needed as this appears to be the default behavior of the API.
@@ -72,7 +60,7 @@ function New-NewHuduAssetLayout {
             }
             $layout.add('fields', @($normalizedFields))
         }
-        $JSON = $layout | ConvertTo-Json -Depth 10
+        $JSON = $layout | ConvertTo-Json -Depth 10 -EnumsAsStrings
         Write-Verbose $JSON
         if ($PSCmdlet.ShouldProcess("Create a new asset Layout in Hudu named $Name, with icon $Icon and $($Fields.Count) fields.", "$Name, with $($Fields.Count) fields.", "Create new Hudu asset layout via API")) {
             ##Invoke-HuduRequest -Method post -Resource '/api/v1/asset_layouts' -Body $JSON

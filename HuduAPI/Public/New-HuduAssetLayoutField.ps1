@@ -1,4 +1,5 @@
-function New-AssetField {
+function New-HuduAssetLayoutField {
+    [Alias('New-ALF')]
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [Parameter()]
@@ -28,12 +29,12 @@ function New-AssetField {
         [Parameter(ParameterSetName = 'Date')]
         [Alias('Expiration')]
         [switch]$AddToExpirations,
-        [Parameter(ParametersetName = 'FromJson', ValueFromPipeline = $true)]
-        [PSCustomObject[]]$JsonObject
+        [Parameter(ParametersetName = 'FromObject', ValueFromPipeline = $true)]
+        [PSCustomObject[]]$Object
     )
     process {
-        if ($JsonObject) {
-            foreach ($J in $JsonObject) {
+        if ($Object) {
+            foreach ($J in $Object) {
                 switch ($J.field_type) {
                     'AssetTag' { $J.field_type = 'AssetLink'; return [AssetLinkField]($J | Select-Object -ExcludeProperty 'min', 'max', 'options', 'expiration') }
                     'Date' { return [DateField]($J | Select-Object -ExcludeProperty 'min', 'max', 'options', 'linkable_id') }

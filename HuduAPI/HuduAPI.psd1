@@ -133,7 +133,11 @@
     'Set-HuduMagicDash',
     'Set-HuduPassword',
     'Set-HuduPasswordArchive',
-    'Set-HuduWebsite'
+    'Set-HuduWebsite',
+    'Get-NewHuduAssetLayout',
+    'New-HuduAssetLayoutField',
+    'New-NewHuduAssetLayout',
+    'Get-NewHuduAsset'
 
 
 
@@ -145,7 +149,7 @@
     VariablesToExport = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @()
+    AliasesToExport   = @('New-ALF')
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
