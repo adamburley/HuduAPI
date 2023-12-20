@@ -33,8 +33,8 @@ function Get-HuduAssetLayout {
             }
         }
         if ($UpdatedAfter -or $UpdatedBefore) {
-            $afterString = $UpdatedAfter ? $UpdatedAfter.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") : $null
-            $beforeString = $UpdatedBefore ? $UpdatedBefore.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") : $null
+            $afterString = $UpdatedAfter ? $UpdatedAfter.ToString('o') : $null
+            $beforeString = $UpdatedBefore ? $UpdatedBefore.ToString('o') : $null
             $HuduRequest.Param.updated_at = "$afterString,$beforeString"
         }
         Write-Verbose "Request parameters: $($HuduRequest | ConvertTo-Json -Depth 3 -Compress)"
