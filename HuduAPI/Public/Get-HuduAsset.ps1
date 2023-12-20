@@ -1,7 +1,7 @@
 # TODO: Handle pipeline input of Company objects
 # TODO: Handle pipeline input of Assetlayout objects
 
-function Get-NewHuduAsset {
+function Get-HuduAsset {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [Parameter(ParameterSetName = 'Id')]

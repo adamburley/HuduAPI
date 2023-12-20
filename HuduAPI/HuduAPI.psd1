@@ -137,7 +137,7 @@
     'Get-HuduAssetLayout',
     'New-HuduAssetLayoutField',
     'New-NewHuduAssetLayout',
-    'Get-NewHuduAsset'
+    'Get-HuduAsset'
 
 
 
