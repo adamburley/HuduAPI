@@ -1,128 +1,70 @@
 function New-HuduAssetLayout {
-    <#
-    .SYNOPSIS
-    Create an Asset Layout
-
-    .DESCRIPTION
-    Uses Hudu API to create new custom asset layout
-
-    .PARAMETER Name
-    Name of the layout
-
-    .PARAMETER Icon
-    FontAwesome Icon class name, example: "fas fa-home"
-
-    .PARAMETER Color
-    Background color hex code
-
-    .PARAMETER IconColor
-    Icon color hex code
-
-    .PARAMETER IncludePasswords
-    Boolean for including passwords
-
-    .PARAMETER IncludePhotos
-    Boolean for including photos
-
-    .PARAMETER IncludeComments
-    Boolean for including comments
-
-    .PARAMETER IncludeFiles
-    Boolean for including files
-
-    .PARAMETER PasswordTypes
-    List of password types, separated with new line characters
-
-    .PARAMETER Slug
-    Url identifier
-
-    .PARAMETER Fields
-    Array of nested fields
-
-    .EXAMPLE
-    New-HuduAssetLayout -Name 'Test asset layout' -Icon 'fas fa-home' -IncludePassword $true
-
-    #>
     [CmdletBinding(SupportsShouldProcess)]
     # This will silence the warning for variables with Password in their name.
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
-    Param (
-        [Parameter(Mandatory = $true)]
-        [String]$Name,
-
-        [Parameter(Mandatory = $true)]
-        [String]$Icon,
-
-        [Parameter(Mandatory = $true)]
-        [String]$Color,
-
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+        [Parameter()]
+        [ArgumentCompletions('"fas fa-circle"', '"fas fa-key"', '"fas fa-envelope"', '"fas fa-laptop"', '"fas fa-globe"', '"fas fa-user"', '"fas fa-user-secret"', '"fas fa-credit-card"', '"fas fa-file"', '"fas fa-file-alt"', '"fas fa-file-archive"', '"fas fa-file-audio"', '"fas fa-file-code"', '"fas fa-file-excel"', '"fas fa-file-image"', '"fas fa-file-pdf"', '"fas fa-file-powerpoint"', '"fas fa-file-video"', '"fas fa-file-word"', '"fas fa-folder"', '"fas fa-folder-open"', '"fas fa-folder-plus')]
+        [string]$Icon = 'fas fa-circle',
+        [Parameter()]
+        [string]$Color = '#5b17f2',
         [Alias('icon_color')]
-        [Parameter(Mandatory = $true)]
-        [String]$IconColor,
-
+        [Parameter()]
+        [string]$IconColor = '#FFFFFF',
         [Alias('include_passwords')]
-        [bool]$IncludePasswords = '',
-
+        [bool]$IncludePasswords = $true,
         [Alias('include_photos')]
-        [bool]$IncludePhotos = '',
-
+        [bool]$IncludePhotos = $true,
         [Alias('include_comments')]
-        [bool]$IncludeComments = '',
-
+        [bool]$IncludeComments = $true,
         [Alias('include_files')]
-        [bool]$IncludeFiles = '',
-
-        [Alias('password_types')]
-        [String]$PasswordTypes = '',
-
-        [Parameter(Mandatory = $true)]
-        [system.collections.generic.list[hashtable]]$Fields
+        [bool]$IncludeFiles = $true,
+        [bool]$Active = $true,
+        [Alias('sidebar_folder_id')]
+        [ValidateRange(1, 1000)]
+        [int]$SidebarFolderId, # https://hudu.ashtonsolutions.com/admin/sidebar_folders/2/edit
+        [Parameter()]
+        [AssetField[]]$Fields
+        # Slug is omitted - does not have an effect
+        # password_types is omitted - does not have an effect
     )
-
-    foreach ($field in $fields) {
-        if ($field.show_in_list) { $field.show_in_list = [System.Convert]::ToBoolean($field.show_in_list) } else { $field.remove('show_in_list') }
-        if ($field.required) { $field.required = [System.Convert]::ToBoolean($field.required) } else { $field.remove('required') }
-        if ($field.expiration) { $field.expiration = [System.Convert]::ToBoolean($field.expiration) } else { $field.remove('expiration') }
-    }
-
-    $AssetLayout = [ordered]@{asset_layout = [ordered]@{} }
-
-    $AssetLayout.asset_layout.add('name', $Name)
-    $AssetLayout.asset_layout.add('icon', $Icon)
-    $AssetLayout.asset_layout.add('color', $Color)
-    $AssetLayout.asset_layout.add('icon_color', $IconColor)
-    $AssetLayout.asset_layout.add('fields', $Fields)
-    #$AssetLayout.asset_layout.add('active', $Active)
-
-    if ($IncludePasswords) {
-        $AssetLayout.asset_layout.add('include_passwords', [System.Convert]::ToBoolean($IncludePasswords))
-    }
-
-    if ($IncludePhotos) {
-        $AssetLayout.asset_layout.add('include_photos', [System.Convert]::ToBoolean($IncludePhotos))
-    }
-
-    if ($IncludeComments) {
-        $AssetLayout.asset_layout.add('include_comments', [System.Convert]::ToBoolean($IncludeComments))
-    }
-
-    if ($IncludeFiles) {
-        $AssetLayout.asset_layout.add('include_files', [System.Convert]::ToBoolean($IncludeFiles))
-    }
-
-    if ($PasswordTypes) {
-        $AssetLayout.asset_layout.add('password_types', $PasswordTypes)
-    }
-
-    if ($Slug) {
-        $AssetLayout.asset_layout.add('slug', $Slug)
-    }
-
-    $JSON = $AssetLayout | ConvertTo-Json -Depth 10
-
-    Write-Verbose $JSON
-
-    if ($PSCmdlet.ShouldProcess($Name)) {
-        Invoke-HuduRequest -Method post -Resource '/api/v1/asset_layouts' -Body $JSON
+    process {
+        $layout = [ordered]@{
+            name              = $Name
+            icon              = $Icon
+            color             = $Color
+            icon_color        = $IconColor
+            include_passwords = $IncludePasswords
+            include_photos    = $IncludePhotos
+            include_comments  = $IncludeComments
+            include_files     = $IncludeFiles
+            active            = $Active
+        }
+        if ($SidebarFolderId) {
+            $layout.add('sidebar_folder_id', $SidebarFolderId)
+        }
+        if ($Fields) {
+            # Exclude ID if present and handle mismatches between front-end site and API field type labels
+            $normalizedFields = $Fields | Convert-HuduAssetLayoutFieldObjectToAPIFormat
+            if (($normalizedFields.Position | Measure-Object -Maximum).Maximum -eq 1) {
+                # No position information provided, so order based on array order.
+                # Note: This is likely not needed as this appears to be the default behavior of the API.
+                # However JSON is specifically unordered, so this is a safeguard.
+                $currentPosition = 1
+                $normalizedFields | Foreach-Object {
+                    $_.position = $currentPosition
+                    $currentPosition++
+                }
+            }
+            $layout.add('fields', @($normalizedFields))
+        }
+        $JSON = $layout | ConvertTo-Json -Depth 10 -EnumsAsStrings
+        Write-Verbose $JSON
+        if ($PSCmdlet.ShouldProcess("Create a new asset Layout in Hudu named $Name, with icon $Icon and $($Fields.Count) fields.", "$Name, with $($Fields.Count) fields.", "Create new Hudu asset layout via API")) {
+            ##Invoke-HuduRequest -Method post -Resource '/api/v1/asset_layouts' -Body $JSON
+            $JSON
+        }
     }
 }
