@@ -1,6 +1,3 @@
-# TODO: Handle pipeline input of Company objects
-# TODO: Handle pipeline input of Assetlayout objects
-
 function Get-HuduAsset {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
@@ -32,7 +29,7 @@ function Get-HuduAsset {
 
         [Parameter(ParameterSetName = 'Default')]
         [Alias('search')]
-        [string]$SearchTerm, # May not return expected results for short strings or strings with special characters.
+        [string]$SearchQuery, # May not return expected results for short strings or strings with special characters.
 
         [Parameter(ParameterSetName = 'Default')]
         [DateTime]$UpdatedAfter, # May return HTTP 500 if both are not specified
@@ -105,7 +102,7 @@ function Get-HuduAsset {
         if ($PrimarySerial) { $Params.primary_serial = $PrimarySerial }
         if ($Slug) { $Params.slug = $Slug }
         if ($Archived) { $Params.archived = $true }
-        if ($SearchTerm) { $Params.search = $SearchTerm }
+        if ($SearchQuery) { $Params.search = $SearchQuery }
         if ($updatedAt) { $Params.updated_at = $updatedAt }
     
         Write-Verbose "Request parameters: $($Params | ConvertTo-Json -Depth 3 -Compress)"
