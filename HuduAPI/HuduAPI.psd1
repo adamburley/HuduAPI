@@ -138,7 +138,8 @@
     'New-HuduAssetLayoutField',
     'Get-HuduAsset',
     'Get-HuduCompany',
-    'Get-HuduActivityLog'
+    'Get-HuduActivityLog',
+    'Get-HuduPassword'
 
 
 
