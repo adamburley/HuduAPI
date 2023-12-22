@@ -1,154 +1,90 @@
 function Set-HuduAssetLayout {
-    <#
-    .SYNOPSIS
-    Update an Asset Layout
-
-    .DESCRIPTION
-    Uses Hudu API to update an Asset Layout
-
-    .PARAMETER Id
-    Id of the requested Asset Layout
-
-    .PARAMETER Name
-    Name of the Asset Layout
-
-    .PARAMETER Icon
-    Icon class name, example: "fas fa-home"
-
-    .PARAMETER Color
-    Hex code for background color, example: #000000
-
-    .PARAMETER IconColor
-    Hex code for background color, example: #000000
-
-    .PARAMETER IncludePasswords
-    Boolean to include passwords
-
-    .PARAMETER IncludePhotos
-    Boolean to include photos
-
-    .PARAMETER IncludeComments
-    Boolean to include comments
-
-    .PARAMETER IncludeFiles
-    Boolean to include files
-
-    .PARAMETER PasswordTypes
-    List of password types, separated with new line characters
-
-    .PARAMETER Slug
-    Url identifier
-
-    .PARAMETER Fields
-    Array of nested fields
-
-    .EXAMPLE
-
-
-    #>
     [CmdletBinding(SupportsShouldProcess)]
     # This will silence the warning for variables with Password in their name.
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
-    Param (
-        [Parameter(Mandatory = $true)]
-        [Int]$Id,
-
-        [String]$Name,
-
-        [String]$Icon,
-
-        [String]$Color,
-
+    #[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
+    param(
+        [parameter(ValueFromPipelineByPropertyName)]
+        [int]$Id,
+        [parameter(ValueFromPipelineByPropertyName)]
+        [string]$Name,
+        [parameter(ValueFromPipelineByPropertyName)]
+        [string]$Slug,
+        [parameter(ValueFromPipelineByPropertyName)]
+        [ArgumentCompletions('"fas fa-circle"', '"fas fa-key"', '"fas fa-envelope"', '"fas fa-laptop"', '"fas fa-globe"', '"fas fa-user"', '"fas fa-user-secret"', '"fas fa-credit-card"', '"fas fa-file"', '"fas fa-file-alt"', '"fas fa-file-archive"', '"fas fa-file-audio"', '"fas fa-file-code"', '"fas fa-file-excel"', '"fas fa-file-image"', '"fas fa-file-pdf"', '"fas fa-file-powerpoint"', '"fas fa-file-video"', '"fas fa-file-word"', '"fas fa-folder"', '"fas fa-folder-open"', '"fas fa-folder-plus')]
+        [string]$Icon,
+        [parameter(ValueFromPipelineByPropertyName)]
+        [string]$Color,
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias('icon_color')]
-        [String]$IconColor,
-
+        [string]$IconColor,
+        [parameter(ValueFromPipelineByPropertyName)]
+        [Alias('sidebar_folder_id')]
+        [int]$SidebarFolderId,
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias('include_passwords')]
         [bool]$IncludePasswords,
-
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias('include_photos')]
         [bool]$IncludePhotos,
-
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias('include_comments')]
         [bool]$IncludeComments,
-
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias('include_files')]
         [bool]$IncludeFiles,
-
-        [Alias('password_types')]
-        [String]$PasswordTypes = '',
-
+        [parameter(ValueFromPipelineByPropertyName)]
         [bool]$Active,
-
-        [string]$Slug,
-
-        [array]$Fields
+        [parameter(ValueFromPipelineByPropertyName)]
+        [AssetField[]]$Fields,
+        [parameter()]
+        [switch]$Put
     )
+    process {
+        if ($Put) {
+            Write-Verbose "PUT specified."
 
-    foreach ($Field in $Fields) {
-        $Field.show_in_list = [System.Convert]::ToBoolean($Field.show_in_list)
-        $Field.required = [System.Convert]::ToBoolean($Field.required)
-        $Field.expiration = [System.Convert]::ToBoolean($Field.expiration)
-    }
-    $Object = Get-HuduAssetLayouts -id $Id
+        }
+        else {
+            # Fetching the existing layout first, so we can emulate a PATCH request.
+            $layout = Get-HuduAssetLayout -Id $Id
+            if (-not $layout) {
+                Write-Error "No layout with ID $Id found. Id is required to update a layout." -ErrorAction Stop
+            }
+            # Compare existing layout to new layout and only update changed properties.
+            $layout.name =              $Name               ? $Name : $layout.name
+            $layout.slug =              $Slug               ? $Slug : $layout.slug
+            $layout.icon =              $Icon               ? $Icon : $layout.icon
+            $layout.color =             $Color              ? $Color : $layout.color
+            $layout.icon_color =        $IconColor          ? $IconColor : $layout.icon_color
+            $layout.sidebar_folder_id = $SidebarFolderId    ? $SidebarFolderId : $layout.sidebar_folder_id
+            $layout.include_passwords = $IncludePasswords   ? $IncludePasswords : $layout.include_passwords
+            $layout.include_photos =    $IncludePhotos      ? $IncludePhotos : $layout.include_photos
+            $layout.include_comments =  $IncludeComments    ? $IncludeComments : $layout.include_comments
+            $layout.include_files =     $IncludeFiles       ? $IncludeFiles : $layout.include_files
+            $layout.active =            $Active             ? $Active : $layout.active
+            #$layout.fields = $Fields ? ($Fields | Convert-HuduAssetLayoutFieldObjectToAPIFormat) : $layout.fields
+        }
+        if ($Fields) {
+            if ($layout.fields) { # Handle updating fields based on ID and adding new fields. Deleting will require replacing all fields with a -Put call
+                $layout.fields | Where-Object { $_.id -inotin $Fields.id } | Foreach-Object { $Fields += $_ }
+            }
+            $layout.fields = $Fields | Convert-HuduAssetLayoutFieldObjectToAPIFormat
+            # Manage field order so new fields are at the bottom
+            $nextPosition = [int]($layout.fields.Position | Measure-Object -Maximum).Maximum + 1
+            foreach ($field in $layout.fields) {
+                if ($field.position -eq 1 -and $null -eq $field.id) {
+                    $field.position = [int]$nextPosition
+                    $nextPosition++
+                }
+            }
+        }
 
-    $AssetLayout = [ordered]@{asset_layout = $Object }
-    #$AssetLayout.asset_layout = $Object
+        $JSON = @{ asset_layout = $layout } | ConvertTo-Json -Depth 10 -EnumsAsStrings
 
-    if ($Name) {
-        $AssetLayout.asset_layout.name = $Name
-    }
-    
-    if ($Icon) {
-        $AssetLayout.asset_layout.icon = $Icon
-    }
-
-    if ($Color) {
-        $AssetLayout.asset_layout.color = $Color
-    }
-
-    if ($IconColor) {
-        $AssetLayout.asset_layout.icon_color = $IconColor
-    }
-
-    if ($Fields) {
-        $AssetLayout.asset_layout.fields = $Fields
-    }
-
-    if ($IncludePasswords) {
-        $AssetLayout.asset_layout.include_passwords = [System.Convert]::ToBoolean($IncludePasswords)
-    }
-
-    if ($IncludePhotos) {
-        $AssetLayout.asset_layout.include_photos = [System.Convert]::ToBoolean($IncludePhotos)
-    }
-
-    if ($IncludeComments) {
-        $AssetLayout.asset_layout.include_comments = [System.Convert]::ToBoolean($IncludeComments)
-    }
-
-    if ($IncludeFiles) {
-        $AssetLayout.asset_layout.include_files = [System.Convert]::ToBoolean($IncludeFiles)
-    }
-
-    if ($PasswordTypes) {
-        $AssetLayout.asset_layout.password_types = $PasswordTypes
-    }
-
-    if ($SidebarFolderID) {
-        $AssetLayout.asset_layout.sidebar_folder_id = $SidebarFolderID
-    }
-
-    if ($Slug) {
-        $AssetLayout.asset_layout.slug = $Slug
-    }
-
-    if ($Active) {
-        $AssetLayout.asset_layout.active = [System.Convert]::ToBoolean($Active)
-    }
-
-    $JSON = $AssetLayout | ConvertTo-Json -Depth 10
-
-    if ($PSCmdlet.ShouldProcess($Id)) {
-        Invoke-HuduRequest -Method put -Resource "/api/v1/asset_layouts/$Id" -Body $JSON
+        Write-Verbose "JSON: $JSON"
+        if ($PSCmdlet.ShouldProcess("Update existing asset layout ID $($layout.id): $($layout.name).", "Asset layout $($layout.name)", "Update existing Hudu asset layout via API")) {
+            Invoke-HuduRequest -Method put -Resource "/api/v1/asset_layouts/$Id" -Body $JSON
+            #$JSON
+        }
     }
 }
