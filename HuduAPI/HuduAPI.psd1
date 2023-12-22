@@ -136,7 +136,6 @@
     'Set-HuduWebsite',
     'Get-HuduAssetLayout',
     'New-HuduAssetLayoutField',
-    'New-NewHuduAssetLayout',
     'Get-HuduAsset',
     'Get-HuduCompany',
     'Get-HuduActivityLog'

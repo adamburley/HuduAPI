@@ -60,11 +60,11 @@ function New-HuduAssetLayout {
             }
             $layout.add('fields', @($normalizedFields))
         }
-        $JSON = $layout | ConvertTo-Json -Depth 10 -EnumsAsStrings
+        $JSON = @{ asset_layout = $layout } | ConvertTo-Json -Depth 10 -EnumsAsStrings
         Write-Verbose $JSON
         if ($PSCmdlet.ShouldProcess("Create a new asset Layout in Hudu named $Name, with icon $Icon and $($Fields.Count) fields.", "$Name, with $($Fields.Count) fields.", "Create new Hudu asset layout via API")) {
-            ##Invoke-HuduRequest -Method post -Resource '/api/v1/asset_layouts' -Body $JSON
-            $JSON
+            Invoke-HuduRequest -Method post -Resource '/api/v1/asset_layouts' -Body $JSON
+            #$JSON
         }
     }
 }
