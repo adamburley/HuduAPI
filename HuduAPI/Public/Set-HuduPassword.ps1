@@ -4,9 +4,9 @@
 # slug is a read-only value
 
 function Set-HuduPassword {
-    [CmdletBinding(ShouldProcess,DefaultParameterSetName = 'Default')]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Default')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '')]
+   # [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '')]
     param(
         [parameter(ValueFromPipelineByPropertyName, Mandatory)]
         [int]$Id,
@@ -54,35 +54,36 @@ function Set-HuduPassword {
         [Alias('password_folder_id')]
         [int]$FolderId,
 
+        [parameter(ParameterSetName='Put')]
         [switch]$Put
     )
     process {
-        $payload = @{}
         if ($Put) {
             Write-Verbose "PUT specified."
-            throw 'notimplementedexception'
+            $PSBoundParame | Select-Object -ExcludeProperty Put,id | ConvertTo-Json
+#            $existing = $PSBoundParameters
             }
         else {
             # Fetching the existing layout first, so we can emulate a PATCH request.
-            $payload = Get-HuduPassword -Id $Id | Select-Object -ExcludeProperty id, slug, created_at, updated_at,url,password_folder_name | ConvertTo-Json | ConvertFrom-Json -AsHashtable # TODO REWRITE
+            $existing = Get-HuduPassword -Id $Id | select -ExcludeProperty url
             #Write-Host ($password | ConvertTo-Json -Compress) -ForegroundColor Yellow
-            if (-not $payload) {
+            if (-not $updated) {
                 Write-Error "No password with ID [$Id] found." -ErrorAction Stop
             }
-            
         }
-        if ($CompanyId) { $payload.company_id = $CompanyId }
-        if ($Password) { $payload.password = $Password}
+        $updated = @{}
+        if ($CompanyId) { $updated.company_id = $CompanyId }
+        if ($Password) { $updated.password = $Password}
 
-        if ($Name) { $payload.name = $Name }
-        if ($Username) { $payload.username = $Username }
-        if ($OTPKey) { $payload.otp_secret = $OTPKey }
-        if ($URL) { $payload.url = $URL }
-        if ($Notes) { $payload.description = $Notes }
-        if ($InPortal) { $payload.in_portal = $InPortal }
-        if ($ParentType) { $payload.passwordable_type = $ParentType }
-        if ($ParentId) { $payload.passwordable_id = $ParentId }
-        if ($FolderId) { $payload.password_folder_id = $FolderId }
+        if ($Name) { $updated.name = $Name }
+        if ($Username) { $updated.username = $Username }
+        if ($OTPKey) { $updated.otp_secret = $OTPKey }
+        if ($URL) { $updated.url = $URL }
+        if ($Notes) { $updated.description = $Notes }
+        if ($InPortal) { $updated.in_portal = $InPortal }
+        if ($ParentType) { $updated.passwordable_type = $ParentType }
+        if ($ParentId) { $updated.passwordable_id = $ParentId }
+        if ($FolderId) { $updated.password_folder_id = $FolderId }
         if ($PSCmdlet.ShouldProcess($Id)) {
             #Invoke-HuduRequest -Method put -Resource "/api/v1/asset_passwords/$Id" -Body $JSON
         }
