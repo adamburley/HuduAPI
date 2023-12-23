@@ -1,11 +1,10 @@
 # URL parameter is excluded from pipeline as passing the existing object back (as of 2.27) will corrupt any existing field value. see known issues.
 # password_folder_name is a read-only value
-# slug is a read-only value
 
 function Set-HuduPassword {
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
-   # [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '')]
+    # [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '')]
     param(
         [parameter(ValueFromPipelineByPropertyName, Mandatory)]
         [int]$Id,
@@ -27,7 +26,7 @@ function Set-HuduPassword {
         [Alias('otp_secret', 'TOTP')]
         [string]$OTPKey,
 
-        [parameter()]
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$URL,
 
         [parameter(ValueFromPipelineByPropertyName)]
@@ -52,13 +51,18 @@ function Set-HuduPassword {
         [int]$FolderId
     )
     process {
+        if ($URL -inotlike "$(Get-HuduBaseURL)*") {
+            $_url = $URL
+        }
+        else { Write-Verbose "Bugged URL detected, omitting field from call." }
+
         $updated = @{}
         if ($CompanyId) { $updated.company_id = $CompanyId }
-        if ($Password) { $updated.password = $Password}
+        if ($Password) { $updated.password = $Password }
         if ($Name) { $updated.name = $Name }
         if ($Username) { $updated.username = $Username }
         if ($OTPKey) { $updated.otp_secret = $OTPKey }
-        if ($URL) { $updated.url = $URL }
+        if ($_url) { $updated.url = $_url }
         if ($Notes) { $updated.description = $Notes }
         if ($InPortal) { $updated.in_portal = $InPortal }
         if ($ParentType) { $updated.passwordable_type = $ParentType }
