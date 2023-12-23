@@ -4,15 +4,14 @@
 # slug is a read-only value
 
 function Set-HuduPassword {
-    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Default')]
+    [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
    # [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '')]
     param(
         [parameter(ValueFromPipelineByPropertyName, Mandatory)]
         [int]$Id,
 
-        [parameter(ParameterSetName='Put',ValueFromPipelineByPropertyName, Mandatory)]
-        [parameter(ParameterSetName='Default',ValueFromPipelineByPropertyName)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias('company_id')]
         [int]$CompanyId,
 
@@ -22,8 +21,7 @@ function Set-HuduPassword {
         [parameter(ValueFromPipelineByPropertyName)]
         [string]$Username,
 
-        [parameter(ParameterSetName='Put',ValueFromPipelineByPropertyName, Mandatory)]
-        [parameter(ParameterSetName='Default',ValueFromPipelineByPropertyName)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [string]$Password,
 
         [parameter(ValueFromPipelineByPropertyName)]
@@ -52,10 +50,7 @@ function Set-HuduPassword {
 
         [parameter(ValueFromPipelineByPropertyName)]
         [Alias('password_folder_id')]
-        [int]$FolderId,
-
-        [parameter(ParameterSetName='Put')]
-        [switch]$Put
+        [int]$FolderId
     )
     process {
         if ($Put) {
