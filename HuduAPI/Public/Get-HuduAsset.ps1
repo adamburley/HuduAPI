@@ -59,34 +59,9 @@ function Get-HuduAsset {
                 Write-Error "Pipeline input must be either a Company or AssetLayout object"
             }
         }
-        if ($Company) {
-            $companyId = switch ($Company.GetType()) {
-                'PSCustomObject' { $Company.id }
-                'int' { $Company }
-                'string' {
-                    if (($cObj = Get-HuduCompany -Name $Company) -and $cObj.Count -eq 1) { $cObj.id }
-                    else {
-                        Write-Warning "Unable to identify company '$Company' or more than one result returned. Omitting from call."
-                        $null
-                    }
-                }
-                Default { Write-Warning 'Unable to determine value of -Company parameter. Omitting from call.'; $null }
-            }
-        }
-        if ($Layout) {
-            $layoutId = switch ($Layout.GetType()) {
-                'PSCustomObject' { $Layout.id }
-                'int' { $Layout }
-                'string' {
-                    if (($lObj = Get-HuduAssetLayout -Name $Layout) -and $lObj.Count -eq 1) { $lObj.id }
-                    else {
-                        Write-Warning "Unable to identify asset layout '$Layout' or more than one result returned. Omitting from call."
-                        $null
-                    }
-                }
-                Default { Write-Warning 'Unable to determine value of -AssetLayout parameter. Omitting from call.'; $null }
-            }
-        }
+        if (-not $companyId) { $companyId = $Company | Find-ObjectIdByReference -Type Company }
+        if (-not $layoutId) { $layoutId = $Layout | Find-ObjectIdByReference -Type AssetLayout }
+
         # As of Hudu V2.27 calls including only part of the date range may return HTTP 500. This differs from the documented behavior. 
         # Workaround is to always specify both if one is set.
         if ($UpdatedAfter -or $UpdatedBefore) {
