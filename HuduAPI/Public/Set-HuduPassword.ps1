@@ -45,14 +45,15 @@ The ID of the password folder. This can be a password folder belonging to the cl
 Password folder details are not currently retrievable via API (as of Hudu 2.27).
 
 .INPUTS
-[PSCustomObject] representation of an existing password asset.
+[PSCustomObject] 
+
+Representation of an existing password asset.
 
 .OUTPUTS
 The updated asset password object.
 
 .EXAMPLE
-Set-HuduPassword -Id 1234 -Name "New Password" -Username "user123" -Password "P@ssw0rd" -URL "https://example.com" -Notes "This is a test password" -InPortal $true
-Updates the existing password with ID 1234, setting the name, username, password, URL, notes, and making it accessible in the portal.
+Set-HuduPassword -Id 1234 -Name "New Password" -Username "user123" -Password "Correct-Horse-Battery-Staple" -URL "https://example.com" -Notes "This is a test password" -InPortal $true
 
 .NOTES
 This function requires an API key with the "Password Access" key modifier. See Hudu > Admin > API.
