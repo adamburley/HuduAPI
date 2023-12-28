@@ -1,103 +1,109 @@
+<#
+.SYNOPSIS
+Create a new asset in Hudu.
+
+.DESCRIPTION
+Create a new asset in Hudu. Supports piping from an asset template object returned by Get-HuduAssetTemplate, or from a custom object with the same properties.
+
+.PARAMETER Name
+The name of the asset.
+
+.PARAMETER Company
+The company associated with the asset. Supports object, ID, or name.
+
+.PARAMETER Layout
+The layout of the asset. Supports object, ID, or name.
+
+.PARAMETER Fields
+Custom fields for the asset. Supports the custom object created by Get-HuduAssetTemplate, or a [hashtable] of key-value pairs.
+If utilizing a hashtable, the key should be the field label, in lower case with spaces replaced by underscores.
+
+.PARAMETER PrimarySerial
+The primary serial number of the asset.
+
+.PARAMETER PrimaryMail
+The primary mail of the asset.
+
+.PARAMETER PrimaryModel
+The primary model of the asset.
+
+.PARAMETER PrimaryManufacturer
+The primary manufacturer of the asset.
+
+.EXAMPLE
+New-HuduAsset -Name "My new asset" -Company 2 -Layout 12
+
+.EXAMPLE
+# Common application. Create a new asset in the ISP layout under company "Contoso, Inc." with custom fields populated.
+$template = Get-HuduAssetTemplate -Layout 'ISP'
+$company = Get-HuduCompany -Name 'Contoso, Inc.'
+$template.Name = "Supergreat ISP"
+$template.Fields.type = "Fiber"
+$template.Fields.contracted_speed = "200/50"
+$template.Fields.notes = "Jeremy Bearamy is our billing contact."
+$template | Add-HuduAsset -Company $company
+
+.LINK
+Get-HuduAssetTemplate
+#>
 function New-HuduAsset {
-    <#
-    .SYNOPSIS
-    Create an Asset
-
-    .DESCRIPTION
-    Uses Hudu API to create assets using custom layouts
-
-    .PARAMETER Name
-    Name of the Asset
-
-    .PARAMETER CompanyId
-    Company id for asset
-
-    .PARAMETER AssetLayoutId
-    Asset layout id
-
-    .PARAMETER Fields
-    Array of custom fields and values
-
-    .PARAMETER PrimarySerial
-    Asset primary serial number
-
-    .PARAMETER PrimaryMail
-    Asset primary mail
-
-    .PARAMETER PrimaryModel
-    Asset primary model
-
-    .PARAMETER PrimaryManufacturer
-    Asset primary manufacturer
-
-    .PARAMETER Slug
-    Url identifier
-
-    .EXAMPLE
-    New-HuduAsset -Name 'Some asset' -CompanyId 1 -Fields @(@{'field_name'='Field Value'})
-
-    #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
-        [Parameter(Mandatory = $true)]
-        [String]$Name,
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
+        [string]$Name,
 
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
         [Alias('company_id')]
-        [Parameter(Mandatory = $true)]
-        [Int]$CompanyId,
+        [object]$Company,
 
-        [Alias('asset_layout_id')]
-        [Parameter(Mandatory = $true)]
-        [Int]$AssetLayoutId,
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
+        [Alias('asset_layout_id', 'AssetLayout', 'AssetLayoutId')]
+        [object]$Layout,
 
-        [Array]$Fields,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [Alias('custom_fields')]
+        [object]$Fields,
 
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('primary_serial')]
         [string]$PrimarySerial,
 
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('primary_mail')]
         [string]$PrimaryMail,
 
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('primary_model')]
         [string]$PrimaryModel,
 
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('primary_manufacturer')]
         [string]$PrimaryManufacturer
     )
+    process {
+        $layoutId = $Layout | Find-ObjectIdByReference -Type AssetLayout
+        $companyId = $Company | Find-ObjectIdByReference -Type Company
 
-    $Asset = [ordered]@{asset = [ordered]@{} }
+        $Asset = [ordered]@{
+            name            = $Name
+            company_id      = $companyId
+            asset_layout_id = $layoutId
+        }
+        if ($Fields) {
+            if ($Fields -is [hashtable[]]) { $Asset.custom_fields = $Fields }
+            else {
+                $Asset.custom_fields = @(@{})
+            ($Fields | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) | ForEach-Object {
+                    if ($null -ne $Fields.$_) { $Asset.custom_fields[0].add($_, $Fields.$_) }
+                }
+            }
+        }
 
-    $Asset.asset.add('name', $Name)
-    $Asset.asset.add('asset_layout_id', $AssetLayoutId)
+        $JSON = @{ asset = $Asset } | ConvertTo-Json -Depth 10
+        Write-Verbose "JSON: $JSON"
 
-
-    if ($PrimarySerial) {
-        $Asset.asset.add('primary_serial', $PrimarySerial)
-    }
-
-    if ($PrimaryMail) {
-        $Asset.asset.add('primary_mail', $PrimaryMail)
-    }
-
-    if ($PrimaryModel) {
-        $Asset.asset.add('primary_model', $PrimaryModel)
-    }
-
-    if ($PrimaryManufacturer) {
-        $Asset.asset.add('primary_manufacturer', $PrimaryManufacturer)
-    }
-
-    if ($Fields) {
-        $Asset.asset.add('custom_fields', $Fields)
-    }
-
-    if ($Slug) {
-        $Asset.asset.add('slug', $Slug)
-    }
-
-    $JSON = $Asset | ConvertTo-Json -Depth 10
-
-    if ($PSCmdlet.ShouldProcess($Name)) {
-        Invoke-HuduRequest -Method post -Resource "/api/v1/companies/$CompanyId/assets" -Body $JSON
+        if ($PSCmdlet.ShouldProcess("Create new Asset `"$Name`" with layout [$layoutId] under company [$companyId].", "Asset", "Create new asset via API")) {
+            Invoke-HuduRequest -Method post -Resource "/api/v1/companies/$CompanyId/assets" -Body $JSON | Select-Object -ExpandProperty asset
+        }
     }
 }
