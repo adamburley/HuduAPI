@@ -86,7 +86,6 @@
     'Get-HuduFolders',
     'Get-HuduIntegrationMatchers',
     'Get-HuduMagicDashes',
-    'Get-HuduPasswords',
     'Get-HuduProcesses',
     'Get-HuduPublicPhotos',
     'Get-HuduRelations',
@@ -116,7 +115,6 @@
     'Remove-HuduCustomHeaders',
     'Remove-HuduMagicDash',
     'Remove-HuduPassword',
-    'Remove-HuduPassword',
     'Remove-HuduRelation',
     'Remove-HuduUpload',
     'Remove-HuduWebsite',
@@ -132,14 +130,14 @@
     'Set-HuduIntegrationMatcher',
     'Set-HuduMagicDash',
     'Set-HuduPassword',
-    'Set-HuduPasswordArchive',
     'Set-HuduWebsite',
     'Get-HuduAssetLayout',
     'New-HuduAssetLayoutField',
     'Get-HuduAsset',
     'Get-HuduCompany',
     'Get-HuduActivityLog',
-    'Get-HuduPassword'
+    'Get-HuduPassword',
+    'Restore-HuduPassword'
 
 
 
