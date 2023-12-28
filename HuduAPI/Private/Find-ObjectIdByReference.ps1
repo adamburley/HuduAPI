@@ -11,9 +11,9 @@ function Find-ObjectIdByReference {
     )
     process {
         if ($null -eq $Reference) { return $null }
-        $id = switch ($Reference.GetType()) {
+        $id = switch ($Reference.GetType().Name) {
             'PSCustomObject' { $Reference.id }
-            'int' { $Reference }
+            {$_ -iin @('Int32','Int64')} { $Reference }
             'string' {
                 $matchedObject = switch ($Type) {
                     'Company' { Get-HuduCompany -Name $Reference }
