@@ -36,6 +36,8 @@ function Get-HuduAsset {
         [Parameter(ParameterSetName = 'Default')]
         [DateTime]$UpdatedBefore,
 
+        [switch]$FieldsAsHashtable,
+
         [parameter(ValueFromPipeline, ParameterSetName = 'Default')]
         [PSCustomObject]$InputObject
     )
@@ -87,6 +89,16 @@ function Get-HuduAsset {
             Method   = 'GET'
             Params   = $Params
         }
-        Invoke-HuduRequestPaginated -HuduRequest $HuduRequest -Property assets
+        if ($result = Invoke-HuduRequestPaginated -HuduRequest $HuduRequest -Property assets) {
+            if ($FieldsAsHashtable) {
+                $ht = @{}
+                $result.fields | ForEach-Object {
+                    $ht.add($_.label.Replace(' ', '_').ToLower(), $_.value)
+                }
+                $result.fields = $ht
+                return $result
+            }
+            else { return $result }
+        }
     }
 }
