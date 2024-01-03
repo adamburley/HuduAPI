@@ -6,7 +6,7 @@ function Find-ObjectIdByReference {
         [object]$Reference,
 
         [Parameter(Position = 0, Mandatory)]
-        [ValidateSet('Company', 'AssetLayout')]
+        [ValidateSet('Asset','Company', 'AssetLayout')]
         [string]$Type
     )
     process {
@@ -18,11 +18,12 @@ function Find-ObjectIdByReference {
                 $matchedObject = switch ($Type) {
                     'Company' { Get-HuduCompany -Name $Reference }
                     'AssetLayout' { Get-HuduAssetLayout -Name $Reference }
+                    'Asset' { Get-HuduAsset -Name $Reference }
                 }
                 if ($matchedObject.Count -eq 1) { $matchedObject.id }
-                else { Write-Warning "Unable to identify $Type '$Reference' or more than one result returned."; $null }
+                else { Write-Error "Unable to identify $Type '$Reference' or more than one result returned."; $null }
             }
-            Default { Write-Warning "Unable to determine value of $Type parameter."; $null }
+            Default { Write-Error "Unable to determine value of $Type parameter."; $null }
         }
         Write-Debug "Found $Type [$id] from [$($Reference.GetType().Name)]$($Reference | ConvertTo-Json -Depth 5 -Compress)"
         return $id
