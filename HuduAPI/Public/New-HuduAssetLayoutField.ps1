@@ -40,7 +40,7 @@ function New-HuduAssetLayoutField {
                     'Date' { return [DateField]($J | Select-Object -ExcludeProperty 'min', 'max', 'options', 'linkable_id') }
                     'Number' { return [NumberField]($J | Select-Object -ExcludeProperty 'options', 'linkable_id', 'expiration') }
                     'Dropdown' { 
-                        $J.options = $J.options -split "`n"
+                        $J.options = ($J.options -split "`n").Trim() # seems things keep coming back with an \r after this split...
                         return [DropdownField]($J | Select-Object -ExcludeProperty 'min', 'max', 'linkable_id', 'expiration') 
                     }
                     Default {
