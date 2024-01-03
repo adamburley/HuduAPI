@@ -138,7 +138,9 @@
     'Get-HuduActivityLog',
     'Get-HuduPassword',
     'Restore-HuduPassword',
-    'Get-HuduAssetTemplate'
+    'Get-HuduAssetTemplate',
+    'Get-HuduCompanyJumplink',
+    'Get-HuduCardJumplink'
 
 
 
