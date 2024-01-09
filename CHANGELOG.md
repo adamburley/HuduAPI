@@ -1,5 +1,18 @@
 ## Functions
-
+- [ ] **[Private Functions](#private-functions)**
+    - [ ] Find-ObjectIdByReference 🆕
+    - [ ] Convert-HuduAssetLayoutFieldObjectToAPIFormat 🆕
+    - [ ] ⚠️ ~~Get-HuduCompanyFolders~~ *supersceded*
+    - [ ] ⚠️ ~~Get-HuduFolderCleanName~~ *supersceded*
+    - [ ] ⚠️ ~~Get-HuduSubfolders~~ *supersceded*
+    - [X] Get-HuduFolderRecursion 🆕
+- [ ] **[Miscellaneous](#misc-functions)**
+    - [X] Get-HuduActivityLog
+    - [ ] Get-HuduAppInfo
+    - [ ] Get-HuduCard
+    - [X] Get-HuduCardJumplink 🆕
+    - [ ] Get-HuduExpirations
+    - [X] Start-HuduExport 🆕
 - [X] **[Asset Layouts](#asset-layouts)**
     - [X] New-HuduAssetLayoutField 🆕
     - [X] New-HuduAssetLayout
@@ -14,23 +27,36 @@
     - [X] Remove-HuduPassword
     - [X] Restore-HuduPassword 🆕
 - [ ] **[Assets](#assets)**
-    - [ ] New-HuduAsset
+    - [X] Get-HuduAssetTemplate 🆕
+    - [X] New-HuduAsset
     - [X] Get-HuduAsset
-    - [ ] Set-HuduAsset
+    - [X] Set-HuduAsset
     - [ ] ⚠️ ~~Set-HuduAssetArchive~~ *supersceded*
     - [ ] Remove-HuduAsset
     - [ ] Restore-HuduAsset 🆕
 - [ ] **[Companies](#companies)**
-    - [ ] Get-HuduCompanyJumplink 🆕
+    - [X] Get-HuduCompanyJumplink 🆕
     - [ ] New-HuduCompany
     - [X] Get-HuduCompany
     - [ ] Set-HuduCompany
     - [ ] ⚠️ ~~Set-HuduCompanyArchive~~ *supersceded*
     - [ ] Remove-HuduCompany
     - [ ] Restore-HuduCompany 🆕
+- [ ] **[Folders](#folders)**
+    - [ ] ⚠️ ~~Get-HuduFolderMap~~ *supersceded*
+    - [X] Get-HuduFolder
+    - [ ] Initialize-HuduFolder
+    - [ ] New-HuduFolder
+    - [ ] Set-HuduFolder
 
 ## TODO
 
+- Refactor Find-ObjectIdByReference to check for `object_type` property as Hudu returns that with most things.
+    - Asset, Article, Company
+    - Not password - possibly this was the intended purpose of `password_type`
+    - Added `-ReturnObject` switch. Need to refactor other functions around that capability
+    - Rename function?
+    - Update Start-HuduCompanyExport to remove redundant Get-HuduCompany call
 - Documentation
 - Add rationale for code analysis suppressions
 - Pre-compile C#?
@@ -39,6 +65,12 @@
     - Add to New-HuduPassword
 - Refactor Invoke-HuduRequest to return better details for calls that do not have a response (e.g. **Delete** calls)
     - Update Remove-HuduPassword and Restore-HuduPassword
+- Refactor New-HuduAsset to handle fields better
+- Check terminology consistency
+    - AssetLayout vs Layout
+- Make sure scriptstoprocess is the best way to add the classes to the PSD file.
+- Refactor Find-ObjectIdByReference to handle multiple / no results better and update functions that use that function to avoid issues where an unfound reference results in making an expensive call
+    - i.e. not being able to find an asset ID results in returning all assets
 
 ## API Known Issues
 
@@ -53,7 +85,49 @@
     - API calls that return a password object will include the asset full name in the `url` field rather than the `url` specified as a link in the body.
         - However, you may pass `url` in a New or Update call and it will update the correct field
     - passing an invalid `password_folder_id` will result in the password being created or updated, but not visible. the password page will have a at the bottom a message like: " There are passwords hidden from view because of incorrect folder IDs. Fix Passwords [link]"
+- Assets
+    - If you add an asset without wrapping it in an object named 'asset' in the JSON, the asset will still be added but it will ignore any fields values. What!?
+    - Likewise, not wrapping the `custom_fields` property in an array causes it to add the field but with no payload (no value).
+- Expirations
+    - Expiration and Resource type are case specific (asset != Asset)
+- Exports
+    - The sample in the API docs has the incorrect format. Correct format for a query returns HTTP 200:
+```json
+{
+    "export": {
+        "include_websites": true,
+        "include_passwords": true,
+        "company_id": 155,
+        "format": "pdf",
+        "asset_layout_ids": [
+            28,
+            4
+        ]
+    }
+}
+```
 
+```json
+{
+  "id": 2,
+  "account_id": 1,
+  "s3_bucket": null,
+  "s3_public": null,
+  "s3_private": null,
+  "s3_region": null,
+  "status": "started",
+  "created_at": "2024-01-03T16:30:24.324Z",
+  "updated_at": "2024-01-03T16:30:24.324Z",
+  "file_data": null,
+  "is_pdf": true,
+  "mask_passwords": null
+}
+```
+
+- Folders
+    - `/folders`
+        - the `in_company` parameter is only evaluated if set to **true**.  Setting the parameter to **false** does not return only global KB folders.
+        - `in_company` parameter evaluates the boolean value of JSON case-specific. `True` is not considered `true`.
 
 ## All functions
 
@@ -75,6 +149,9 @@
     - Added more output for `-Verbose`
     - Added argument completions for `-ResourceType` and `-ActionMessage` based on sample data
     - Linting
+- Start-HuduExport
+    - New function to wrap the `/exports` and `/s3_exports` API endpoints
+    - As there's no way to monitor exports from the API, added a custom LogUrl property to the returned object with a link to the log entry in the Hudu UI
 
 ## Asset layouts
 
@@ -115,6 +192,18 @@
     - Added parameter sets to minimize confusion when using `-Id` or `-Slug`
     - Added support for search term, updated before / updated after
     - Documentation includes notes on oddities such as the returned *url* being to the password, not the passworded thing.
+    - Added switch `-FieldsAsHashtable`. When set, fields property is a hashtable of key-value pairs.
+- Get-HuduAssetTemplate
+    - New function to create a template with custom fields for that specific asset layout
+    - *Fields* property includes all available fields for that layout
+    - *FieldInformation* property includes field specifics (Type, Required, Options for dropdown)
+- New-HuduAsset
+    - Added pipeline support from objects created by Get-HuduAssetTemplate
+    - `-Fields` supports both custom object from Get-HuduAssetTemplate and a standard `@{ 'fieldname' = 'fieldvalue' }` hashtable
+- Set-HuduAsset
+    - Added pipeline support
+    - Added support to updating custom fields by hashtable and by array of objects (as returned by Get-HuduAsset)
+
 
 ## Passwords
 - Get-HuduPassword
@@ -141,3 +230,14 @@
 
 - Get-HuduCompany
     - Added parameter sets to minimize confusion when using `-Id` or `-Slug`
+
+## Folders
+
+- Get-HuduFolder
+    - Single-ized noun
+    - Support for company objects
+    - Added pipeline support from companies or folder objects
+    - Added recursion support (from *Get-HuduFolderMap*)
+    - Recursions now create child objects as an array under a `children` property
+    - Recursion now supports recursing from a single folder
+    - Added scoping Company / Global / All with workaround for `in_company` API parameter not properly handling `false` (see [api known issues](#api-known-issues))
