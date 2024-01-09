@@ -79,11 +79,7 @@
     'Get-HuduBaseURL',
     'Get-HuduCard',
     'Get-HuduCompanies',
-    'Get-HuduCompanyFolders',
-    'Get-HuduFolderCleanName',
     'Get-HuduExpirations',
-    'Get-HuduFolderMap',
-    'Get-HuduFolders',
     'Get-HuduIntegrationMatchers',
     'Get-HuduMagicDashes',
     'Get-HuduProcesses',
@@ -140,10 +136,9 @@
     'Restore-HuduPassword',
     'Get-HuduAssetTemplate',
     'Get-HuduCompanyJumplink',
-    'Get-HuduCardJumplink'
-
-
-
+    'Get-HuduCardJumplink',
+    'Start-HuduExport',
+    'Get-HuduFolder'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport   = @()
