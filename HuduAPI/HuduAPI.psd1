@@ -81,7 +81,7 @@
     'Get-HuduCompanies',
     'Get-HuduExpirations',
     'Get-HuduIntegrationMatchers',
-    'Get-HuduMagicDashes',
+    'Get-HuduMagicDash',
     'Get-HuduProcesses',
     'Get-HuduPublicPhotos',
     'Get-HuduRelations',
