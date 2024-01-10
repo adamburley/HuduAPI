@@ -138,7 +138,8 @@
     'Get-HuduCompanyJumplink',
     'Get-HuduCardJumplink',
     'Start-HuduExport',
-    'Get-HuduFolder'
+    'Get-HuduFolder',
+    'Remove-HuduFolder'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport   = @()

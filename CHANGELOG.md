@@ -47,8 +47,9 @@
     - [X] Get-HuduFolder
     - [ ] ⚠️ ~~Initialize-HuduFolder~~ *supersceded*
     - [ ] Initialize-HuduFolderStructure 🆕
-    - [X] New-HuduFolder
-    - [ ] Set-HuduFolder
+    - [ ] New-HuduFolder
+    - [X] Set-HuduFolder
+    - [ ] Remove-HuduFolder 🆕
 
 ## TODO
 
@@ -254,6 +255,8 @@
     - Added pipeline support from a folder object
     - Added support for folder objects for the `ParentFolder` parameter
     - Fixed a bug where you're not able to move folders to the root level
+- Remove-HuduFolder
+    - New function to support the `DELETE` action.
 - Initialize-HuduFolderStructure
     - Replaces *Initialize-HuduFolder* as a way to bootstrap a hierarchy of folders
     - New structure allows multi-level stacks. Example input structure
