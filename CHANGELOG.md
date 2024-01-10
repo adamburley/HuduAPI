@@ -45,8 +45,9 @@
 - [ ] **[Folders](#folders)**
     - [ ] ⚠️ ~~Get-HuduFolderMap~~ *supersceded*
     - [X] Get-HuduFolder
-    - [ ] Initialize-HuduFolder
-    - [ ] New-HuduFolder
+    - [ ] ⚠️ ~~Initialize-HuduFolder~~ *supersceded*
+    - [ ] Initialize-HuduFolderStructure 🆕
+    - [X] New-HuduFolder
     - [ ] Set-HuduFolder
 
 ## TODO
@@ -125,9 +126,17 @@
 ```
 
 - Folders
-    - `/folders`
+    - `GET /folders`
         - the `in_company` parameter is only evaluated if set to **true**.  Setting the parameter to **false** does not return only global KB folders.
         - `in_company` parameter evaluates the boolean value of JSON case-specific. `True` is not considered `true`.
+    - `PUT /folders`
+        - API expects updated object nested under a `folder` property in the JSON. If the object is not nested under a `folder` property in the body of the call, API does not return an error and may process with unexpected results.
+        - API does not validate if the parent folder ID belongs to the same company. This allows circumstances where a folder of one company is nested under the folder of another or of the Global KB.  In this state, the error folder is visible in the parent folder view, but clicking on the link yields an error. The folder is still accessible however by manually assembling the `?company_id=[x]&folder=[y]` URI path maually.
+            - In the error state, subfolders are still visible, but folder contents are not either in the original company or the new company.
+            - This has been replicated to work for any company with any folder e.g. arbitrarily changing the URI returns the same folder but with the navigation trail under a different company.
+            - **Possible security issue** Manually changing the `folder` parameter in the URI may allow a user to see a folder belonging to a company they do not have access delegated to, possibly only subfolder listings but possibly contents as well.
+        - `parent_folder_id` does not accept `null` input. Set to `0` to make folder a first-level item.
+    - `icon` API property is stored but not utilized in Hudu UI
 
 ## All functions
 
@@ -241,3 +250,48 @@
     - Recursions now create child objects as an array under a `children` property
     - Recursion now supports recursing from a single folder
     - Added scoping Company / Global / All with workaround for `in_company` API parameter not properly handling `false` (see [api known issues](#api-known-issues))
+- Put-HuduFolder
+    - Added pipeline support from a folder object
+    - Added support for folder objects for the `ParentFolder` parameter
+    - Fixed a bug where you're not able to move folders to the root level
+- Initialize-HuduFolderStructure
+    - Replaces *Initialize-HuduFolder* as a way to bootstrap a hierarchy of folders
+    - New structure allows multi-level stacks. Example input structure
+```json
+[
+  {
+    "name": "Servers",
+    "icon": "fas fa-server",
+    "description": "Documentation related to servers",
+    "children": [
+      {
+        "name": "Windows"
+      },
+      {
+        "name": "MacOs",
+        "icon": "fas fa-apple",
+        "children": [
+            {
+                "name": "Deployment",
+                "description": "Regarding deploying MacOs servers"
+            }
+        ]
+      }
+    ]    
+  },
+  {
+    "name": "User Onboarding"
+  },
+  {
+    "name": "Foods",
+    "children": [
+        {
+            "name": "Grains"
+        },
+        {
+            "name": "Fruit"
+        }
+    ]
+  }
+]
+```
