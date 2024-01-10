@@ -59,7 +59,7 @@ function Remove-HuduPassword {
         }
         if ($PSCmdlet.ShouldProcess($spPrompt, "Company password asset", "Remove asset password via API")) {
             if ($Permanent){
-                if ($Force -or -$PSCmdlet.ShouldContinue("This will permanently delete the password asset `"$Name`" [$Id]. Continue?",'')){
+                if ($Force -or $PSCmdlet.ShouldContinue("This will permanently delete the password asset `"$Name`" [$Id]. Continue?",'')){
                     Invoke-HuduRequest -Method Delete -Resource "/api/v1/asset_passwords/$Id" | Out-Null
                 }
             } else{
