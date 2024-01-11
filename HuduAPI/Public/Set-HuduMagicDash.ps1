@@ -1,111 +1,128 @@
-function Set-HuduMagicDash {
-    <#
+<#
     .SYNOPSIS
-    Create or Update a Magic Dash Item
+    Create or Update a Magic Dash item
 
     .DESCRIPTION
-    Magic Dash takes just simple key-pairs. Whether you want to add a new Magic Dash Item, or update one, you can use the same endpoint, so it is really easy! It uses the title, and company_name to match.
+    Create or update a Magic Dash item in a company dashboard. Magic Dash items are identified by Title and Company. If an existing Magic Dash item has the same title, it is overwritten.
+
+    .PARAMETER Company
+    Company to create the dash item in. Accepts a Company object, name, or ID.
 
     .PARAMETER Title
-    This is the title. If there is an existing Magic Dash Item with matching title and company_name, then it will match into that item.
-
-    .PARAMETER CompanyName
-    This is the attribute we use to match to an existing company. If there is an existing Magic Dash Item with matching title and company_name, then it will match into that item.
+    Magic dash title, appears at the top of the dash item. This is unique within a company, setting a duplicate title overwrites the existing item of the same title.
+    
+    .PARAMETER Icon
+    An icon to display next to the Title of the magic dash item.
+    This parameter supports one of two valid formats:
+     - A FontAwesome icon string. Autocompletes of common values are available but any valid react-fontawesome identifier is accepted.
+     - A fully qualified URL to an image icon. This is not resized unless done so with custom CSS.
 
     .PARAMETER Message
-    This will be the first content that will be displayed on the Magic Dash Item.
-
-    .PARAMETER Icon
-    Either fill this in, or image_url. Use a (FontAwesome icon for the header of a Magic Dash Item. Must be in the format of fas fa-circle
-
-    .PARAMETER ImageURL
-    Either fill this in, or icon. Used in the header of a Magic Dash Item.
-
-    .PARAMETER ContentLink
-    Either fill this in, or content, or leave both blank. Used to have a link to an external website.
+    Text displayed in the body of the Magic Dash item. Accepts plain text or text formatted with HTML.
+    Message is mandatory and may not be an empty string.
 
     .PARAMETER Content
-    Either fill this in, or content_link, or leave both blank. Fill in with HTML (tables, images, videos, etc.) to display more content in your Magic Dash Item.
+    Further content within the Magic Dash item. Accepts one of three formats:
+     - A fully qualified URL. This will be rendered as a link at the bottom of the Magic Dash item, labeled "OPEN LINK"
+     - Valid HTML content. This may include headers, tables, bullets, and CSS including direct styling and class tags. An "OPEN ->" link will be rendered at the bottom of the Magic Dash item, which will make the provided content visible on the page.
+     - $null.  No link is rendered, the only information displayed is in Title and Message.
 
     .PARAMETER Shade
-    Use a different color for your Magic Dash Item for different contextual states. Options are to leave it blank, success, or danger
+    Applies styling to the magic dash item. Default options are '' (No styling), 'Success' (Green background) and 'Danger' (Pink background).
+    If you are utilizing custom CSS, you may specify a custom class name here. The format is
+        Shade: 'bananas'
+        Class Name: .custom-fast-fact.custom-fast-fact--bananas
+    See Links for references to further documentation.
 
     .EXAMPLE
-    Set-HuduMagicDash -Title 'Test Dash' -CompanyName 'Test Company' -Message 'This will be displayed first'
+    Set-HuduMagicDash -Title 'My First Dashboard' -Company 'Test Company' -Message 'Hello, World!'
 
-    #>
+    .EXAMPLE
+    $existingMagicDash | Set-HuduMagicDash -Icon 'fas fa-lemon'
+    # Set a magic dash item with a FontAwesome icon
+
+    .EXAMPLE
+    $existingMagicDash | Set-HuduMagicDash -Icon 'https://example.com/image.png'
+    # Set a magic dash item with a custom image icon
+
+    .EXAMPLE
+    $existingMagicDash | Set-HuduMagicDash -Content 'https://example.com'
+    # Set a magic dash item with a link to a URL
+
+    .EXAMPLE
+    $existingMagicDash | Set-HuduMagicDash -Content '<h1>My First Dashboard</h1><p>Hello, World!</p>'
+    # Set a magic dash item with custom HTML content
+#>
+function Set-HuduMagicDash {
     [CmdletBinding(SupportsShouldProcess)]
     Param (
-        [Parameter(Mandatory = $true)]
-        [String]$Title,
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
+        [string]$Title,
 
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
         [Alias('company_name')]
-        [Parameter(Mandatory = $true)]
-        [String]$CompanyName,
+        [object]$Company,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [String]$Message,
 
-        [String]$Icon = '',
-
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('image_url')]
-        [String]$ImageURL = '',
+        [ArgumentCompletions('"fas fa-info-circle"', '"fas fa-circle"', '"fas fa-key"', '"fas fa-envelope"', '"fas fa-laptop"', '"fas fa-globe"', '"fas fa-user"', '"fas fa-user-secret"', '"fas fa-credit-card"', '"fas fa-file"', '"fas fa-file-alt"', '"fas fa-file-archive"', '"fas fa-file-audio"', '"fas fa-file-code"', '"fas fa-file-excel"', '"fas fa-file-image"', '"fas fa-file-pdf"', '"fas fa-file-powerpoint"', '"fas fa-file-video"', '"fas fa-file-word"', '"fas fa-folder"', '"fas fa-folder-open"', '"fas fa-folder-plus')]
+        [String]$Icon = 'fas fa-info-circle',
 
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('content_link')]
-        [String]$ContentLink = '',
+        [String]$Content,
 
-        [String]$Content = '',
-
-        [String]$Shade = ''
+        [AllowNull()]
+        [String]$Shade
     )
-
-    if ($Icon -and $ImageURL) {
-        Write-Error ('You can only use one of icon or image URL')
-        exit 1
+    
+    $newDash = @{
+        title        = $Title
+        company_name = ($Company | Find-ObjectIdByReference -Type Company -ReturnObject).name
+        message      = $Message
     }
-
-    if ($content_link -and $content) {
-        Write-Error ('You can only use one of content or content_link')
-        exit 1
+    if ('Icon' -iin $PSBoundParameters.Keys) {
+        if ($Icon) {
+            if ([System.Uri]::IsWellFormedUriString($Icon, [System.UriKind]::Absolute)) {
+                $newDash.image_url = $Icon
+            }
+            else {
+                $newDash.icon = $Icon
+            }
+        }
+        else {
+            $newDash.icon = $null
+            $newDash.image_url = $null
+        }
+    } 
+    if ('Content' -in $PSBoundParameters.Keys) {
+        if ($Content) {
+            if ([System.Uri]::IsWellFormedUriString($Content, [System.UriKind]::Absolute)) {
+                $newDash.content_link = $Content
+            }
+            else {
+                $newDash.content = $Content
+            }
+        }
+        else {
+            $newDash.content_link = $null
+            $newDash.content = $null
+        }
     }
-
-    $MagicDash = [ordered]@{}
-
-    if ($Title) {
-        $MagicDash.add('title', $Title)
+    if ('Shade' -in $PSBoundParameters.Keys) {
+        # Allow nulling to clear
+        if ($Shade) { $newDash.shade = $Shade.ToLower() }
+        else { $newDash.shade = $null }
     }
+    $JSON = $newDash | ConvertTo-Json -Compress
 
-    if ($CompanyName) {
-        $MagicDash.add('company_name', $CompanyName)
-    }
+    Write-Verbose "JSON: $JSON"
 
-    if ($Message) {
-        $MagicDash.add('message', $Message)
-    }
-
-    if ($Icon) {
-        $MagicDash.add('icon', $Icon)
-    }
-
-    if ($ImageURL) {
-        $MagicDash.add('image_url', $ImageURL)
-    }
-
-    if ($ContentLink) {
-        $MagicDash.add('content_link', $ContentLink)
-    }
-
-    if ($Content) {
-        $MagicDash.add('content', $Content)
-    }
-
-    if ($Shade) {
-        $MagicDash.add('shade', $Shade)
-    }
-
-    $JSON = $MagicDash | ConvertTo-Json
-
-    if ($PSCmdlet.ShouldProcess("$Companyname - $Title")) {
+    if ($PSCmdlet.ShouldProcess("Add or update Magic Dash item [$Title]")) {
         Invoke-HuduRequest -Method post -Resource '/api/v1/magic_dash' -Body $JSON
     }
 }
